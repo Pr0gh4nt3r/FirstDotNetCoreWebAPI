@@ -1,3 +1,10 @@
+x-common-environment: &common-environment
+  ConnectionStrings__DefaultConnection: "Server=172.24.48.1,1433;Database=Test;User Id=sa;Password=sa;TrustServerCertificate=true;"
+  JWT__AccessTokenSecret: "f79ab2f54cbba2dceb7819ac150d990bda231610c908c90d2104a34b17932fc7b9f2ebd979d9fc97fa73574ca51c30aca184ca5df75f82dafe8bae185d33e092"
+  JWT__RefreshTokenSecret: "d5e75163190dc172a0585231ca368032ca6f8c76f45483376c094087f43020a77b7a7c05fc8f399e9fe68bd17cd9b012d75cae40478421e3b284c440f0d2b394"
+  JWT__Issuer: "https://projekt-kappa.de"
+  JWT__Audience: "https://projekt-kappa.de"
+
 services:
   firstdotnetcorewebapi:
     image: ${DOCKER_REGISTRY-}firstdotnetcorewebapi
@@ -7,3 +14,16 @@ services:
     ports:
       - "8000:8000"
       - "8443:8443"
+    environment:
+      <<: *common-environment
+
+  dotnetcorewebjwtauthapi:
+    image: ${DOCKER_REGISTRY-}dotnetcorewebjwtauthapi
+    build:
+      context: .
+      dockerfile: DotNetCoreWebJWTAuthAPI/Dockerfile
+    ports:
+      - "9000:9000"
+      - "9443:9443"
+    environment:
+      <<: *common-environment
