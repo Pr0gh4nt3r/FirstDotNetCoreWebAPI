@@ -8,11 +8,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace FirstDotNetWebAPI.Migrations
+namespace FirstDotNetCoreWebAPI.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20241029002234_UpdatePK")]
-    partial class UpdatePK
+    [Migration("20241031015314_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
