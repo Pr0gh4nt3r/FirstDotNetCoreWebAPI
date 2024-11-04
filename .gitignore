@@ -365,3 +365,5 @@ FodyWeavers.xsd
 # Safty-relevant
 FirstDotNetCoreWebAPI.http
 /DotNetWebJWTAuthAPI/DotNetWebJWTAuthAPI.http
+/DotNetWebJWTAuthAPI/DotNetCoreWebJWTAuthAPI.http
+/DotNetCoreWebJWTAuthAPI/DotNetCoreWebJWTAuthAPI.http
