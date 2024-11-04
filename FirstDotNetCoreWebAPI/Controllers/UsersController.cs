@@ -1,19 +1,23 @@
 ﻿using FirstDotNetCoreWebAPI.Data;
 using FirstDotNetCoreWebAPI.DTOs;
 using FirstDotNetCoreWebAPI.Entities;
-using FirstDotNetCoreWebAPI.Helpers;
+using FirstDotNetCoreWebAPI.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
 
 namespace FirstDotNetCoreWebAPI.Controllers
 {
-    [Route("api/[controller]")]
+    [Authorize]
     [ApiController]
-    public class UsersController(DataContext dataContext) : ControllerBase
+    [Route("api/[controller]")]
+    public class UsersController(DataContext dataContext, UserService userService) : ControllerBase
     {
         private readonly DataContext _dataContext = dataContext;
+        private readonly UserService _userService = userService;
 
+        [AllowAnonymous]
         [HttpGet("{email}")]
         public async Task<ActionResult<User>> GetUser(string email)
         {
@@ -25,23 +29,20 @@ namespace FirstDotNetCoreWebAPI.Controllers
             return Ok(user);
         }
 
+        [AllowAnonymous]
         [HttpPost]
-        public async Task<ActionResult<User>> CreateUser(User user)
+        public async Task<ActionResult<User>> CreateUser(User _user)
         {
-            _dataContext.Users.Add(user);
+            User? user = await _userService.RegisterUserAsync(_user.Email, _user.Password);
 
-            try
+            if (user == null)
             {
-                await _dataContext.SaveChangesAsync();
-            }
-            catch (DbUpdateException)
-            {
-                bool userExists = DataCheckHelper.UserExistsAsync(_dataContext, user.Email).Result;
+                bool userExists = await _userService.UserExistsAsync(_user.Email);
 
                 if (userExists)
                     return BadRequest("A user with that email already exists.");
-                else
-                    throw;
+
+                return BadRequest("Something went wrong while register the user.");
             }
 
             return Ok(user);
@@ -73,7 +74,7 @@ namespace FirstDotNetCoreWebAPI.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                bool userExists = DataCheckHelper.UserExistsAsync(_dataContext, email).Result;
+                bool userExists = _userService.UserExistsAsync(email).Result;
 
                 if (!userExists)
                     return NotFound("User not found.");
@@ -100,7 +101,7 @@ namespace FirstDotNetCoreWebAPI.Controllers
             }
             catch (DBConcurrencyException)
             {
-                bool userExists = DataCheckHelper.UserExistsAsync(_dataContext, email).Result;
+                bool userExists = _userService.UserExistsAsync(email).Result;
 
                 if (!userExists)
                     return NotFound("User not found.");
