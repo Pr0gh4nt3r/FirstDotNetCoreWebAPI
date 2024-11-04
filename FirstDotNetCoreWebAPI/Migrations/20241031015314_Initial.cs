@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace FirstDotNetWebAPI.Migrations
+namespace FirstDotNetCoreWebAPI.Migrations
 {
     /// <inheritdoc />
     public partial class Initial : Migration
@@ -14,15 +14,13 @@ namespace FirstDotNetWebAPI.Migrations
                 name: "Users",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Password = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     IsEmailConfirmed = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Users", x => x.Id);
+                    table.PrimaryKey("PK_Users", x => x.Email);
                 });
         }
 
