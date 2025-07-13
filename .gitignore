@@ -365,3 +365,4 @@ FodyWeavers.xsd
 # Safty-relevant
 FirstDotNetCoreWebAPI.http
 /DotNetCoreWebJWTAuthAPI/DotNetCoreWebJWTAuthAPI.http
+/DotNetCoreWebJWTAuthAPI/Notizen.txt
