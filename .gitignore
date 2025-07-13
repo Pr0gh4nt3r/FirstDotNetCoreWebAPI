@@ -366,3 +366,6 @@ FodyWeavers.xsd
 FirstDotNetCoreWebAPI.http
 /DotNetCoreWebJWTAuthAPI/DotNetCoreWebJWTAuthAPI.http
 /DotNetCoreWebJWTAuthAPI/Notizen.txt
+/.env
+/DotNetCoreWebJWTAuthAPI/appsettings.json
+/FirstDotNetCoreWebAPI/appsettings.json
