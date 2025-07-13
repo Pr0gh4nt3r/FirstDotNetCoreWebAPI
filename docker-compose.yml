@@ -1,0 +1,44 @@
+x-common-environment: &common-environment
+  ConnectionStrings__DefaultConnection: "${DB_CONNECTION_STRING}"
+  JWT__AccessTokenSecret: "${ACCESS_TOKEN_SECRET}"
+  JWT__RefreshTokenSecret: "${REFRESH_TOKEN_SECRET}"
+  JWT__Issuer: "${JWT_ISSUER}"                                          # Aussteller -> Auth API
+  JWT__Audience: "${JWT_AUDIENCE}"                                      # Zielgruppe -> Data API
+  JWT__AccessTokenExpirationMinutes: "${ACCESS_TOKEN_EXPIRATION}"
+  JWT__RefreshTokenExpirationDays: "${REFRESH_TOKEN_EXPIRATION}"
+
+services:
+  firstdotnetcorewebapi:
+    image: ${DOCKER_REGISTRY-}firstdotnetcorewebapi
+    build:
+      context: .
+      dockerfile: FirstDotNetCoreWebAPI/Dockerfile
+    ports:
+      - "8001:8000"
+      - "8443:8443"
+    networks:
+      custom:
+        ipv4_address: ${IP_DATA_API}
+    environment:
+      <<: *common-environment
+
+  dotnetcorewebjwtauthapi:
+    image: ${DOCKER_REGISTRY-}dotnetcorewebjwtauthapi
+    build:
+      context: .
+      dockerfile: DotNetCoreWebJWTAuthAPI/Dockerfile
+    ports:
+      - "9000:9000"
+      - "9443:9443"
+    networks:
+      custom:
+        ipv4_address: ${IP_AUTH_API}
+    environment:
+      <<: *common-environment
+
+networks:
+  custom:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "${SUBNET}"
