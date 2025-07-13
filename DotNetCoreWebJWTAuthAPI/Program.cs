@@ -1,8 +1,11 @@
 using DotNetCoreWebJWTAuthAPI.Data;
 using DotNetCoreWebJWTAuthAPI.Services;
 using Microsoft.EntityFrameworkCore;
+using System.IdentityModel.Tokens.Jwt;
 
 var builder = WebApplication.CreateBuilder(args);
+
+JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 // Add services to the container.
 

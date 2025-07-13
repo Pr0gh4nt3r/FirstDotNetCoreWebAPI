@@ -3,7 +3,7 @@ using DotNetCoreWebJWTAuthAPI.Entities;
 using DotNetCoreWebJWTAuthAPI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
-using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace DotNetCoreWebJWTAuthAPI.Controllers
 {
@@ -23,7 +23,7 @@ namespace DotNetCoreWebJWTAuthAPI.Controllers
             if (user == null)
                 return Unauthorized("Invalid email or password.");
 
-            string accessToken = await _tokenService.GenerateAccessTokenAsync(_user.Email);
+            string accessToken = _tokenService.GenerateAccessToken(_user.Email);
             string? refreshToken = await _tokenService.GenerateRefreshTokenAsync(_user.Email);
 
             if (refreshToken == null)
@@ -36,22 +36,33 @@ namespace DotNetCoreWebJWTAuthAPI.Controllers
         [HttpPost("refresh")]
         public async Task<ActionResult> RefreshToken([FromBody] string refreshToken)
         {
-            TokenValidationResult? result = await _tokenService.ValidateRefreshToken(refreshToken);
+            bool isTokenRevoked = await _tokenService.CheckRefreshTokenRevoked(refreshToken);
+
+            if (isTokenRevoked)
+                return NotFound("Token not found or already revoked.");
+
+            TokenValidationResult? result = await _tokenService.ValidateRefreshTokenAsync(refreshToken);
 
             if (result == null)
                 return Unauthorized("Invalid refresh token.");
 
-            string? email = result.ClaimsIdentity.FindFirst(ClaimTypes.Email)?.Value;
+            string? email = result.ClaimsIdentity.FindFirst(JwtRegisteredClaimNames.Email)?.Value;
 
             if (email == null)
-                return Unauthorized("Invalid refresh token.");
+                return Unauthorized("Email is missing.");
 
-            string newAccessToken = await _tokenService.GenerateAccessTokenAsync(email);
+            string newAccessToken = _tokenService.GenerateAccessToken(email);
+            string? newRefreshToken = await _tokenService.GenerateRefreshTokenAsync(email);
 
-            // Optional: Neuer Refresh-Token für zusätzliche Sicherheit
-            //string? newRefreshToken = _tokenGenerator.GenerateRefreshToken(email);
+            bool? success = await _tokenService.RevokeRefreshTokenAsync(refreshToken);
 
-            return Ok(new { accessToken = newAccessToken });
+            if (success == false)
+                return NotFound("Token not found or already revoked.");
+
+            if (success == null)
+                return BadRequest("Something went wrong while revoking the refresh token.");
+
+            return Ok(new { accessToken = newAccessToken, refreshToken = newRefreshToken });
         }
 
         [HttpPatch("revoke")]
@@ -59,7 +70,7 @@ namespace DotNetCoreWebJWTAuthAPI.Controllers
         {
             bool? success = await _tokenService.RevokeRefreshTokenAsync(refreshToken);
 
-            if (success != null && success == false)
+            if (success == false)
                 return NotFound("Token not found or already revoked.");
 
             if (success == null)
