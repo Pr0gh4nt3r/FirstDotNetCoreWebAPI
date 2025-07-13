@@ -3,6 +3,7 @@ using FirstDotNetCoreWebAPI.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,25 +17,45 @@ builder.Services.AddSwaggerGen();
 // Registriere den UserService im DI-Container
 builder.Services.AddScoped<UserService>(); // AddScoped erstellt eine neue Instanz pro Anfrage
 
-builder.Services.AddAuthorization();
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+IConfigurationSection jwtSection = builder.Configuration.GetSection("JWT");
+string validIssuer = jwtSection["Issuer"] ?? throw new InvalidOperationException("Issuer is not configured.");
+string validAudience = jwtSection["Audience"] ?? throw new InvalidOperationException("Audience is not configured.");
+string accessTokenSecret = jwtSection["AccessTokenSecret"] ?? throw new InvalidOperationException("Access Token Secret is not configured.");
+byte[] accessKey = Convert.FromBase64String(accessTokenSecret);
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.SaveToken = true;
+    options.TokenValidationParameters = new()
     {
-        options.TokenValidationParameters = new()
-        {
-            ValidateIssuer = true,                                  // Überprüfe den Aussteller des Tokens
-            ValidateAudience = true,                                // Überprüfe den Zielpublikum des Tokens
-            ValidateLifetime = true,                                // Überprüfe, ob das Token abgelaufen ist
-            ValidateIssuerSigningKey = true,                        // Überprüfe den Signierschlüssel
-            ValidIssuer = builder.Configuration["JWT:Issuer"],      // Hier wird der Issuer aus den Einstellungen gelesen
-            ValidAudience = builder.Configuration["JWT:Audience"],  // Hier wird die Audience aus den Einstellungen gelesen
-            IssuerSigningKey = new SymmetricSecurityKey(Convert.FromHexString(builder.Configuration["JWT:AccessTokenSecret"]))
-        };
-    });
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(accessKey),
+
+        ValidateIssuer = true,
+        ValidIssuer = validIssuer,
+
+        ValidateAudience = true,
+        ValidAudience = validAudience,
+
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.FromSeconds(30),
+
+        NameClaimType = JwtRegisteredClaimNames.Email,
+        RoleClaimType = "token_type"
+    };
+});
+
+builder.Services.AddAuthorization();
 
 builder.Services.AddDbContext<DataContext>(options =>
 {
-    _ = options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+    string connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Default connection is not configured.");
+    _ = options.UseSqlServer(connectionString);
 });
 
 var app = builder.Build();
